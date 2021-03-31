@@ -9,8 +9,8 @@ import (
 type hostList []string
 
 type config struct {
-	hosts             hostList
-	listeners         hostList
+	host string
+	// listeners         hostList
 	defaultPort       string
 	connections       int
 	reportInterval    string

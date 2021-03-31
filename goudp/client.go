@@ -25,22 +25,18 @@ func openClient(app *config, proto string) {
 			log.Printf("openClient: error while resolving udp address=%s: %v", app.localAddr, err)
 		}
 		dialer.LocalAddr = addr
-		log.Printf("openClient: resolve localAddr: %v", dialer.LocalAddr)
 	}
 
-	for _, host := range app.hosts {
-		h := appendPortIfMissing(host, app.defaultPort)
+	host := appendPortIfMissing(app.host, app.defaultPort)
+	for i := 0; i < app.connections; i++ {
+		conn, err := dialer.Dial(proto, host)
 
-		for i := 0; i < app.connections; i++ {
-			conn, err := dialer.Dial(proto, h)
-
-			if err != nil {
-				log.Printf("openClient: error while dial host %s: %v", h, err)
-				continue
-			}
-
-			spawnClient(app, &wg, conn, i, app.connections, &aggReader, &aggWriter)
+		if err != nil {
+			log.Printf("openClient: error while dial host %s: %v", host, err)
+			continue
 		}
+
+		spawnClient(app, &wg, conn, i, app.connections, &aggReader, &aggWriter)
 	}
 
 	wg.Wait()
@@ -77,11 +73,9 @@ func handleConnectionClient(app *config, wg *sync.WaitGroup, conn net.Conn, cl, 
 	defer wg.Done()
 
 	// log.Printf("handleConnectionClient: starting %d/%d: from %v to %v", cl, connection, conn.LocalAddr(), conn.RemoteAddr())
-
 	if err := sendOptions(app, conn); err != nil {
 		return
 	}
-
 	// log.Printf("handleConnectionClient: option sent: %v", app.opt)
 
 	doneReader := make(chan struct{})
@@ -126,7 +120,7 @@ func clientWriter(conn net.Conn, cl, connection int, doneWriter chan struct{}, b
 
 	connIndex := fmt.Sprintf("%d/%d", cl, connection)
 	buf := randBuf(bufSize)
-	workLoop(connIndex, "clientWriter", "snd/s", conn.Read, buf, opt.ReportInterval, opt.MaxSpeed, agg)
+	workLoop(connIndex, "clientWriter", "snd/s", conn.Write, buf, opt.ReportInterval, opt.MaxSpeed, agg)
 	close(doneWriter)
 
 	// log.Printf("clientWriter: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())

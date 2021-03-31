@@ -10,13 +10,11 @@ import (
 	"time"
 )
 
-func server(app *config) {
+func openServer(app *config) {
 	var wg sync.WaitGroup
 
-	for _, host := range app.hosts {
-		h := appendPortIfMissing(host, app.defaultPort)
-		listenUDP(app, &wg, h)
-	}
+	host := appendPortIfMissing(app.host, app.defaultPort)
+	listenUDP(app, &wg, host)
 
 	wg.Wait()
 }

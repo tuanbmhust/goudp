@@ -20,14 +20,14 @@ func main() {
 	}
 
 	app := config{}
-	app.connections, err = strconv.Atoi(os.Getenv("CONNECTIONS"))             //number of parallel connections
-	app.hosts = []string{os.Getenv("DEST_IP") + ":" + os.Getenv("DEST_PORT")} //Host IP
-	app.defaultPort = ":8080"                                                 //default port if missing listeners
-	app.opt.UDPReadSize, err = strconv.Atoi(os.Getenv("READ_SIZE"))           //
-	app.opt.UDPWriteSize, err = strconv.Atoi(os.Getenv("WRITE_SIZE"))         //
-	app.opt.MaxSpeed, err = strconv.ParseFloat(os.Getenv("MAX_SPEED"), 64)    //equals 0 means unlimited
-	app.reportInterval = os.Getenv("REPORT_INTERVAL") + "s"                   //time between 2 report
-	app.totalDuration = os.Getenv("TOTAL_DURATION") + "s"                     //total report time
+	app.connections, err = strconv.Atoi(os.Getenv("CONNECTIONS"))          //number of parallel connections
+	app.host = os.Getenv("DEST_IP") + ":" + os.Getenv("DEST_PORT")         //Host IP
+	app.defaultPort = ":8080"                                              //default port if missing listeners
+	app.opt.UDPReadSize, err = strconv.Atoi(os.Getenv("READ_SIZE"))        //
+	app.opt.UDPWriteSize, err = strconv.Atoi(os.Getenv("WRITE_SIZE"))      //
+	app.opt.MaxSpeed, err = strconv.ParseFloat(os.Getenv("MAX_SPEED"), 64) //equals 0 means unlimited
+	app.reportInterval = os.Getenv("REPORT_INTERVAL") + "s"                //time between 2 report
+	app.totalDuration = os.Getenv("TOTAL_DURATION") + "s"                  //total report time
 	app.localAddr = os.Getenv("SOURCE_IP") + ":" + os.Getenv("SOURCE_PORT")
 
 	if err != nil {
@@ -56,12 +56,12 @@ func main() {
 		log.Panicf("bad totalDuration: %q: %v", app.totalDuration, errDuration)
 	}
 
-	log.Printf("connections=%d defaultPort=%s hosts=%q", app.connections, app.defaultPort, app.hosts)
+	log.Printf("connections=%d defaultPort=%s hosts=%q", app.connections, app.defaultPort, app.host)
 
 	// Run in server mode
 	if app.isClient == false {
 		log.Printf("In server mode... use '-client' to switch to client mode...")
-		server(&app)
+		openServer(&app)
 		return
 	}
 
