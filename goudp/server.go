@@ -35,7 +35,7 @@ func listenUDP(app *config, wg *sync.WaitGroup, h string) {
 	}
 
 	wg.Add(1)
-	go handleUDP(app, wg, conn)
+	handleUDP(app, wg, conn)
 }
 
 func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
@@ -78,13 +78,15 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			dec := gob.NewDecoder(bytes.NewBuffer(buf[:n]))
 			if errOpt := dec.Decode(&info.opt); errOpt != nil {
 				log.Printf("handleUDP: ERROR options failure: %v", errOpt)
+				//Remove error client
+				delete(tab, src.String())
+				info = nil
 				continue
 			}
-			// log.Printf("handleUDP: options received: %v", info.opt)
+			log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
-				opt := info.opt
-				go serverWriteTo(conn, opt, src, info.acc, info.id, 0, &aggWriter)
+				go serverWriteTo(conn, info.opt, src, info.acc, info.id, 0, &aggWriter)
 			}
 
 			continue
@@ -100,8 +102,11 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 		if time.Since(info.start) > info.opt.TotalDuration {
 			log.Printf("handleUDP: total duration %s timer: %s", info.opt.TotalDuration, src)
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
-			log.Printf("handleUDP: FIX-ME: remove idle udp from table...")
-			// delete(tab, src.String())
+
+			//Remove idle client from table
+			delete(tab, src.String())
+			info = nil
+
 			continue
 		}
 

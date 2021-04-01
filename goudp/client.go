@@ -76,7 +76,7 @@ func handleConnectionClient(app *config, wg *sync.WaitGroup, conn net.Conn, cl, 
 	if err := sendOptions(app, conn); err != nil {
 		return
 	}
-	// log.Printf("handleConnectionClient: option sent: %v", app.opt)
+	log.Printf("handleConnectionClient: option sent: %v", app.opt)
 
 	doneReader := make(chan struct{})
 	doneWriter := make(chan struct{})
