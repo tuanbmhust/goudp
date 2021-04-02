@@ -110,9 +110,8 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 		}
 
 		if time.Since(info.start) > info.opt.TotalDuration {
-			log.Printf("handleUDP: total duration %s timer: %s", info.opt.TotalDuration, src)
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
-			log.Printf("Total packet Server received: %d", info.acc.calls)
+			log.Printf("Total packet Server received from %s: %d", src, info.acc.calls)
 
 			//Remove idle client from table
 			delete(tab, src.String())
