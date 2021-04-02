@@ -55,6 +55,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 	buf := make([]byte, app.opt.UDPReadSize)
 
 	for {
+
 		var info *udpInfo
 		n, src, errRead := conn.ReadFromUDP(buf) //Read from client
 
@@ -86,12 +87,11 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 				continue
 			}
 
-			log.Printf("handleUDP: Receive from source: %v", src)
-
 			idCount++
 			info.acc.prevTime = info.start
 			tab[src.String()] = info
 
+			log.Printf("handleUDP: Receive from source: %v", src)
 			log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
@@ -116,6 +116,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			//Remove idle client from table
 			delete(tab, src.String())
 			info = nil
+			idCount--
 			continue
 		}
 

@@ -128,7 +128,7 @@ func clientWriter(conn net.Conn, cl, connection int, doneWriter chan struct{}, b
 	// log.Printf("clientWriter: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())
 }
 
-//workLoop do the loop for each go routine clientWriter or serverWriteTo
+//workLoop do the loop for each go routine
 func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, totalReportDuration time.Duration, maxSpeed float64, agg *aggregate) {
 	start := time.Now()
 	acc := &account{}
