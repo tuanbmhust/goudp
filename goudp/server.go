@@ -70,8 +70,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 				id:     idCount,
 			}
 
-			//Remove packet that is not from new source after conn.Close()
-			//Which has none option
+			//Remove packet that is not from new src after conn.Close() which has null opt
 			dec := gob.NewDecoder(bytes.NewBuffer(buf[:n]))
 			if errOpt := dec.Decode(&info.opt); errOpt != nil {
 				//log.Printf("handleUDP: ERROR options: %v", errOpt)
@@ -95,6 +94,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 
 			continue
 		}
+
 		//Receive msg from existed src
 		connIndex := fmt.Sprintf("%d/%d", info.id, 0)
 
@@ -108,6 +108,12 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 		if time.Since(info.start) > info.opt.TotalDuration {
 			log.Printf("handleUDP: total duration %s timer: %s", info.opt.TotalDuration, src)
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
+
+			//Print aggregate
+			// log.Printf("aggregate reading: %d Mbps %d recv/s", aggReader.Mbps, aggReader.Cps)
+			// if !app.isOnlyReadServer {
+			// 	log.Printf("aggregate writing: %d Mbps %d send/s", aggWriter.Mbps, aggWriter.Cps)
+			// }
 
 			//Remove idle client from table
 			delete(tab, src.String())
@@ -134,7 +140,7 @@ func serverWriteTo(conn *net.UDPConn, opt options, dest net.Addr, acc *account, 
 
 	buf := randBuf(opt.UDPWriteSize)
 
-	workLoop(connIndex, "serverWriteTo", "snd/s", udpWriteTo, buf, opt.ReportInterval, opt.MaxSpeed, agg)
+	workLoop(connIndex, "serverWriteTo", "snd/s", udpWriteTo, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
 
 	log.Printf("serverWriteTo: exiting: %v", dest)
 }
