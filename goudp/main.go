@@ -36,8 +36,8 @@ func main() {
 	}
 
 	flag.BoolVar(&app.isClient, "client", false, "run in client mode")
-	flag.BoolVar(&app.isOnlyReadServer, "readserver", true, "Default: true. Set `false` without quotes to use duplex server in server mode")
-	flag.BoolVar(&app.isOnlyWriteClient, "readclient", true, "Default: true. Set `false` without quotes to use duplex client in client mode")
+	flag.BoolVar(&app.isOnlyReadServer, "readserver", true, "Set to `false` to use duplex server in server mode")
+	flag.BoolVar(&app.isOnlyWriteClient, "readclient", true, "Set to `false` to use duplex client in client mode")
 
 	flag.Parse()
 

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type hostList []string
+// type hostList []string
 
 type config struct {
 	host string

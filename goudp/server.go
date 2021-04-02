@@ -62,7 +62,6 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 
 		//If the connection is from new src
 		if !found {
-			log.Printf("handleUDP: Receive from source: %v", src)
 
 			info = &udpInfo{
 				remote: src,
@@ -71,18 +70,23 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 				id:     idCount,
 			}
 
+			//Remove packet that is not from new source after conn.Close()
+			//Which has none option
+			dec := gob.NewDecoder(bytes.NewBuffer(buf[:n]))
+			if errOpt := dec.Decode(&info.opt); errOpt != nil {
+				//log.Printf("handleUDP: ERROR options: %v", errOpt)
+				// Remove error client
+				// delete(tab, src.String())
+				info = nil
+				continue
+			}
+
+			log.Printf("handleUDP: Receive from source: %v", src)
+
 			idCount++
 			info.acc.prevTime = info.start
 			tab[src.String()] = info
 
-			dec := gob.NewDecoder(bytes.NewBuffer(buf[:n]))
-			if errOpt := dec.Decode(&info.opt); errOpt != nil {
-				log.Printf("handleUDP: ERROR options failure: %v", errOpt)
-				//Remove error client
-				delete(tab, src.String())
-				info = nil
-				continue
-			}
 			log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
@@ -99,6 +103,8 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			continue
 		}
 
+		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
+
 		if time.Since(info.start) > info.opt.TotalDuration {
 			log.Printf("handleUDP: total duration %s timer: %s", info.opt.TotalDuration, src)
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
@@ -106,11 +112,9 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			//Remove idle client from table
 			delete(tab, src.String())
 			info = nil
-
 			continue
 		}
 
-		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
 	}
 }
 

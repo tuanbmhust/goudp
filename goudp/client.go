@@ -91,7 +91,6 @@ func handleConnectionClient(app *config, wg *sync.WaitGroup, conn net.Conn, cl, 
 
 	timerPeriod := time.NewTimer(app.opt.TotalDuration)
 	<-timerPeriod.C
-	log.Printf("handleConnectionClient: %v timer", app.opt.TotalDuration)
 	timerPeriod.Stop()
 
 	conn.Close()
@@ -148,11 +147,16 @@ func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval
 
 		n, err := f(buf)
 		if err != nil {
-			log.Printf("workLoop %s %s: %v", connID, label, err)
+			//log.Printf("workLoop %s %s: %v", connID, label, err)
 			break
 		}
 
 		acc.update(n, reportInterval, connID, label, cpsLabel)
+
+		//Check duration
+		if time.Since(start).Seconds() > 10 {
+			break
+		}
 	}
 
 	acc.average(start, connID, label, cpsLabel, agg)
