@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"runtime"
 	"sync"
 	"time"
 )
 
 func openServer(app *config) {
+	//Number of CPU can use
+	runtime.GOMAXPROCS(app.numThreadSV)
+
 	var wg sync.WaitGroup
 
 	host := appendPortIfMissing(app.host, app.defaultPort)

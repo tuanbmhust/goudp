@@ -13,6 +13,9 @@ import (
 )
 
 func openClient(app *config, proto string) {
+	//Number of CPU can use
+	runtime.GOMAXPROCS(app.numThreadCL)
+
 	var wg sync.WaitGroup
 	var aggReader aggregate
 	var aggWriter aggregate
@@ -126,7 +129,7 @@ func clientWriter(conn net.Conn, cl, connection int, doneWriter chan struct{}, b
 }
 
 //workLoop do the loop for each go routine clientWriter or serverWriteTo
-func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, reportDuration time.Duration, maxSpeed float64, agg *aggregate) {
+func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, totalReportDuration time.Duration, maxSpeed float64, agg *aggregate) {
 	start := time.Now()
 	acc := &account{}
 	acc.prevTime = start
@@ -154,7 +157,7 @@ func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval
 		acc.update(n, reportInterval, connID, label, cpsLabel)
 
 		//Check duration
-		if time.Since(start).Seconds() > reportDuration.Seconds() {
+		if time.Since(start).Seconds() > totalReportDuration.Seconds() {
 			break
 		}
 	}
