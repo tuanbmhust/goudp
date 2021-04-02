@@ -16,7 +16,6 @@ type config struct {
 	reportInterval    string
 	totalDuration     string
 	opt               options
-	chart             string
 	localAddr         string
 	isClient          bool
 	isOnlyReadServer  bool

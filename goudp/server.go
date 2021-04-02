@@ -15,6 +15,8 @@ func openServer(app *config) {
 	//Number of CPU can use
 	runtime.GOMAXPROCS(app.numThreadSV)
 
+	log.Printf("%v", app)
+
 	var wg sync.WaitGroup
 
 	host := appendPortIfMissing(app.host, app.defaultPort)
@@ -107,17 +109,10 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			continue
 		}
 
-		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
-
 		if time.Since(info.start) > info.opt.TotalDuration {
 			log.Printf("handleUDP: total duration %s timer: %s", info.opt.TotalDuration, src)
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
-
-			//Print aggregate
-			// log.Printf("aggregate reading: %d Mbps %d recv/s", aggReader.Mbps, aggReader.Cps)
-			// if !app.isOnlyReadServer {
-			// 	log.Printf("aggregate writing: %d Mbps %d send/s", aggWriter.Mbps, aggWriter.Cps)
-			// }
+			log.Printf("Total packet Server received: %d", info.acc.calls)
 
 			//Remove idle client from table
 			delete(tab, src.String())
@@ -125,6 +120,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			continue
 		}
 
+		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
 	}
 }
 
@@ -144,7 +140,7 @@ func serverWriteTo(conn *net.UDPConn, opt options, dest net.Addr, acc *account, 
 
 	buf := randBuf(opt.UDPWriteSize)
 
-	workLoop(connIndex, "serverWriteTo", "snd/s", udpWriteTo, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
+	workLoop(connIndex, "Server write", "snd/s", udpWriteTo, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
 
 	log.Printf("serverWriteTo: exiting: %v", dest)
 }
