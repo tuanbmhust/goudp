@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"sync"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type account struct {
 	prevCalls int
 	size      int64
 	calls     int
+	mutex     sync.Mutex
 }
 
 const reportFormat = "%s %7s %14s rate: %6d Mbps %6d %s"
@@ -29,8 +31,10 @@ func (a *account) average(start time.Time, conn, label, cpsLabel string, agg *ag
 }
 
 func (a *account) update(n int, reportInterval time.Duration, conn, label, cpsLabel string) {
+	a.mutex.Lock()
 	a.calls++
 	a.size += int64(n)
+	a.mutex.Unlock()
 
 	now := time.Now()
 	elap := now.Sub(a.prevTime)
@@ -42,8 +46,10 @@ func (a *account) update(n int, reportInterval time.Duration, conn, label, cpsLa
 
 		log.Printf(reportFormat, conn, "report", label, mbps, cps, cpsLabel)
 
+		a.mutex.Lock()
 		a.prevTime = now
 		a.prevSize = a.size
 		a.prevCalls = a.calls
+		a.mutex.Unlock()
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type hostList []string
+// type hostList []string
 
 type config struct {
 	host string
@@ -16,11 +16,12 @@ type config struct {
 	reportInterval    string
 	totalDuration     string
 	opt               options
-	chart             string
 	localAddr         string
 	isClient          bool
 	isOnlyReadServer  bool
 	isOnlyWriteClient bool
+	numThreadSV       int
+	numThreadCL       int
 }
 
 type options struct {

@@ -13,6 +13,9 @@ import (
 )
 
 func openClient(app *config, proto string) {
+	//Number of CPU can use
+	runtime.GOMAXPROCS(app.numThreadCL)
+
 	var wg sync.WaitGroup
 	var aggReader aggregate
 	var aggWriter aggregate
@@ -91,7 +94,6 @@ func handleConnectionClient(app *config, wg *sync.WaitGroup, conn net.Conn, cl, 
 
 	timerPeriod := time.NewTimer(app.opt.TotalDuration)
 	<-timerPeriod.C
-	log.Printf("handleConnectionClient: %v timer", app.opt.TotalDuration)
 	timerPeriod.Stop()
 
 	conn.Close()
@@ -109,7 +111,7 @@ func clientReader(conn net.Conn, cl, connection int, doneReader chan struct{}, b
 
 	connIndex := fmt.Sprintf("%d/%d", cl, connection)
 	buf := make([]byte, bufSize)
-	workLoop(connIndex, "clientReader", "rcv/s", conn.Read, buf, opt.ReportInterval, opt.MaxSpeed, agg)
+	workLoop(connIndex, "Client received", "rcv/s", conn.Read, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
 	close(doneReader)
 
 	// log.Printf("clientReader: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())
@@ -120,14 +122,14 @@ func clientWriter(conn net.Conn, cl, connection int, doneWriter chan struct{}, b
 
 	connIndex := fmt.Sprintf("%d/%d", cl, connection)
 	buf := randBuf(bufSize)
-	workLoop(connIndex, "clientWriter", "snd/s", conn.Write, buf, opt.ReportInterval, opt.MaxSpeed, agg)
+	workLoop(connIndex, "Client sent", "snd/s", conn.Write, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
 	close(doneWriter)
 
 	// log.Printf("clientWriter: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())
 }
 
-//workLoop do the loop for each go routine clientWriter or serverWriteTo
-func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, maxSpeed float64, agg *aggregate) {
+//workLoop do the loop for each go routine
+func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, totalReportDuration time.Duration, maxSpeed float64, agg *aggregate) {
 	start := time.Now()
 	acc := &account{}
 	acc.prevTime = start
@@ -140,7 +142,7 @@ func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval
 			if elapSec > 0 {
 				mbps := float64(8*(acc.size-acc.prevSize)) / (1000000 * elapSec) //Megabits per second
 				if mbps > maxSpeed {
-					time.Sleep(time.Millisecond)
+					time.Sleep(time.Microsecond)
 					continue
 				}
 			}
@@ -148,14 +150,20 @@ func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval
 
 		n, err := f(buf)
 		if err != nil {
-			log.Printf("workLoop %s %s: %v", connID, label, err)
+			//log.Printf("workLoop %s %s: %v", connID, label, err)
 			break
 		}
 
 		acc.update(n, reportInterval, connID, label, cpsLabel)
+
+		//Check duration
+		if time.Since(start).Seconds() > totalReportDuration.Seconds() {
+			break
+		}
 	}
 
 	acc.average(start, connID, label, cpsLabel, agg)
+	log.Printf("Total packet "+label+": %d", acc.calls)
 }
 
 func randBuf(size int) []byte {
