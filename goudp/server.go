@@ -56,6 +56,13 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 
 	for {
 
+		for key, val := range tab {
+			if time.Since(val.start).Seconds() > val.opt.TotalDuration.Seconds() {
+				delete(tab, key)
+				continue
+			}
+		}
+
 		var info *udpInfo
 		n, src, errRead := conn.ReadFromUDP(buf) //Read from client
 
@@ -95,7 +102,8 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
-				go serverWriteTo(conn, info.opt, src, info.acc, info.id, 0, &aggWriter)
+				opt := info.opt
+				go serverWriteTo(conn, opt, src, info.acc, info.id, 0, &aggWriter)
 			}
 
 			continue

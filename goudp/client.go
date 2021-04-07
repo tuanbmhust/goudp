@@ -58,8 +58,9 @@ func spawnClient(app *config, wg *sync.WaitGroup, conn net.Conn, cl, connection 
 func sendOptions(app *config, conn net.Conn) error {
 	var optBuf bytes.Buffer
 	enc := gob.NewEncoder(&optBuf)
+	opt := app.opt
 
-	if err := enc.Encode(&app.opt); err != nil {
+	if err := enc.Encode(&opt); err != nil {
 		log.Printf("handleConnectionClient: UDP options failure: %v", err)
 		return err
 	}
@@ -84,12 +85,14 @@ func handleConnectionClient(app *config, wg *sync.WaitGroup, conn net.Conn, cl, 
 	doneReader := make(chan struct{})
 	doneWriter := make(chan struct{})
 
+	opt := app.opt
+
 	bufSizeOut := app.opt.UDPWriteSize
-	go clientWriter(conn, cl, connection, doneWriter, bufSizeOut, app.opt, aggWriter)
+	go clientWriter(conn, cl, connection, doneWriter, bufSizeOut, opt, aggWriter)
 
 	if !app.isOnlyWriteClient {
 		bufSizeIn := app.opt.UDPReadSize
-		go clientReader(conn, cl, connection, doneReader, bufSizeIn, app.opt, aggReader)
+		go clientReader(conn, cl, connection, doneReader, bufSizeIn, opt, aggReader)
 	}
 
 	timerPeriod := time.NewTimer(app.opt.TotalDuration)
@@ -111,7 +114,7 @@ func clientReader(conn net.Conn, cl, connection int, doneReader chan struct{}, b
 
 	connIndex := fmt.Sprintf("%d/%d", cl, connection)
 	buf := make([]byte, bufSize)
-	workLoop(connIndex, "Client received", "rcv/s", conn.Read, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
+	workLoop(connIndex, "Client received", "rcv/s", conn.Read, buf, opt.ReportInterval, opt.TotalDuration, 0, agg)
 	close(doneReader)
 
 	// log.Printf("clientReader: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())
