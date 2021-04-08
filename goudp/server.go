@@ -55,6 +55,13 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 	buf := make([]byte, app.opt.UDPReadSize)
 
 	for {
+		var info *udpInfo
+		n, src, errRead := conn.ReadFromUDP(buf) //Read from client
+
+		if src == nil {
+			log.Printf("handleUDP: ERROR read nil src: %v", errRead)
+			continue
+		}
 
 		for key, val := range tab {
 			if time.Since(val.start).Seconds() > val.opt.TotalDuration.Seconds() {
@@ -62,16 +69,9 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 				val.acc.average(val.start, connIndex, "handleUDP", "rcv/s", &aggReader)
 				log.Printf("Total packet Server received from %s: %d", key, val.acc.calls)
 				delete(tab, key)
+				idCount--
 				continue
 			}
-		}
-
-		var info *udpInfo
-		n, src, errRead := conn.ReadFromUDP(buf) //Read from client
-
-		if src == nil {
-			log.Printf("handleUDP: ERROR read nil src: %v", errRead)
-			continue
 		}
 
 		var found bool
@@ -91,9 +91,6 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			dec := gob.NewDecoder(bytes.NewBuffer(buf[:n]))
 			if errOpt := dec.Decode(&info.opt); errOpt != nil {
 				//log.Printf("handleUDP: ERROR options: %v", errOpt)
-				// Remove error client
-				// delete(tab, src.String())
-				info = nil
 				continue
 			}
 
@@ -102,7 +99,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			tab[src.String()] = info
 
 			log.Printf("handleUDP: Receive from source: %v", src)
-			log.Printf("handleUDP: options received: %v", info.opt)
+			// log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
 				opt := info.opt
