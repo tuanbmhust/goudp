@@ -114,7 +114,7 @@ func clientReader(conn net.Conn, cl, connection int, doneReader chan struct{}, b
 
 	connIndex := fmt.Sprintf("%d/%d", cl, connection)
 	buf := make([]byte, bufSize)
-	workLoop(connIndex, "Client received", "rcv/s", conn.Read, buf, opt.ReportInterval, opt.TotalDuration, 0, agg)
+	workLoop(connIndex, "Client received", "rcv/s", conn.Read, buf, opt.ReportInterval, 0, agg)
 	close(doneReader)
 
 	// log.Printf("clientReader: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())
@@ -125,14 +125,14 @@ func clientWriter(conn net.Conn, cl, connection int, doneWriter chan struct{}, b
 
 	connIndex := fmt.Sprintf("%d/%d", cl, connection)
 	buf := randBuf(bufSize)
-	workLoop(connIndex, "Client sent", "snd/s", conn.Write, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
+	workLoop(connIndex, "Client sent", "snd/s", conn.Write, buf, opt.ReportInterval, opt.MaxSpeed, agg)
 	close(doneWriter)
 
 	// log.Printf("clientWriter: stopping id %d/%d %v", cl, connection, conn.RemoteAddr())
 }
 
 //workLoop do the loop for each go routine
-func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, totalReportDuration time.Duration, maxSpeed float64, agg *aggregate) {
+func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval time.Duration, maxSpeed float64, agg *aggregate) {
 	start := time.Now()
 	acc := &account{}
 	acc.prevTime = start
@@ -159,10 +159,6 @@ func workLoop(connID, label, cpsLabel string, f call, buf []byte, reportInterval
 
 		acc.update(n, reportInterval, connID, label, cpsLabel)
 
-		//Check duration
-		if time.Since(start).Seconds() > totalReportDuration.Seconds() {
-			break
-		}
 	}
 
 	acc.average(start, connID, label, cpsLabel, agg)

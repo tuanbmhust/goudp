@@ -58,6 +58,9 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 
 		for key, val := range tab {
 			if time.Since(val.start).Seconds() > val.opt.TotalDuration.Seconds() {
+				connIndex := fmt.Sprintf("%d/%d", val.id, 0)
+				val.acc.average(val.start, connIndex, "handleUDP", "rcv/s", &aggReader)
+				log.Printf("Total packet Server received from %s: %d", key, val.acc.calls)
 				delete(tab, key)
 				continue
 			}
@@ -148,7 +151,7 @@ func serverWriteTo(conn *net.UDPConn, opt options, dest net.Addr, acc *account, 
 
 	buf := randBuf(opt.UDPWriteSize)
 
-	workLoop(connIndex, "Server write", "snd/s", udpWriteTo, buf, opt.ReportInterval, opt.TotalDuration, opt.MaxSpeed, agg)
+	workLoop(connIndex, "Server write", "snd/s", udpWriteTo, buf, opt.ReportInterval, opt.MaxSpeed, agg)
 
 	log.Printf("serverWriteTo: exiting: %v", dest)
 }
