@@ -63,7 +63,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			continue
 		}
 
-		for key, val := range tab {
+		for key, val := range tab { //
 			if time.Since(val.start).Seconds() > val.opt.TotalDuration.Seconds() {
 				connIndex := fmt.Sprintf("%d/%d", val.id, 0)
 				val.acc.average(val.start, connIndex, "handleUDP", "rcv/s", &aggReader)
@@ -79,7 +79,6 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 
 		//If the connection is from new src
 		if !found {
-
 			info = &udpInfo{
 				remote: src,
 				acc:    &account{},
@@ -117,6 +116,8 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			continue
 		}
 
+		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
+
 		if time.Since(info.start) > info.opt.TotalDuration {
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
 			log.Printf("Total packet Server received from %s: %d", src, info.acc.calls)
@@ -127,8 +128,6 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			idCount--
 			continue
 		}
-
-		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
 	}
 }
 
