@@ -31,10 +31,10 @@ func (a *account) average(start time.Time, conn, label, cpsLabel string, agg *ag
 }
 
 func (a *account) update(n int, reportInterval time.Duration, conn, label, cpsLabel string) {
-	a.mutex.Lock()
+	// a.mutex.Lock()
 	a.calls++
 	a.size += int64(n)
-	a.mutex.Unlock()
+	// a.mutex.Unlock()
 
 	now := time.Now()
 	elap := now.Sub(a.prevTime)
