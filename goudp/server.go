@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -17,15 +16,11 @@ func openServer(app *config) {
 
 	log.Printf("%v", app)
 
-	var wg sync.WaitGroup
-
 	host := appendPortIfMissing(app.host, app.defaultPort)
-	listenUDP(app, &wg, host)
-
-	wg.Wait()
+	listenUDP(app, host)
 }
 
-func listenUDP(app *config, wg *sync.WaitGroup, h string) {
+func listenUDP(app *config, h string) {
 	log.Printf("Server: spawning UDP listener: %s", h)
 
 	udpAddr, errAddr := net.ResolveUDPAddr("udp", h)
@@ -40,12 +35,10 @@ func listenUDP(app *config, wg *sync.WaitGroup, h string) {
 		return
 	}
 
-	wg.Add(1)
-	handleUDP(app, wg, conn)
+	handleUDP(app, conn)
 }
 
-func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
-	defer wg.Done()
+func handleUDP(app *config, conn *net.UDPConn) {
 
 	var idCount int //Count the number of src connect to server
 	var aggReader aggregate
@@ -55,16 +48,8 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 	buf := make([]byte, app.opt.UDPReadSize)
 
 	for {
-		var info *udpInfo
-		n, src, errRead := conn.ReadFromUDP(buf) //Read from client
-
-		if src == nil {
-			log.Printf("handleUDP: ERROR read nil src: %v", errRead)
-			continue
-		}
-
-		for key, val := range tab { //
-			if time.Since(val.start).Seconds() > val.opt.TotalDuration.Seconds() {
+		for key, val := range tab { //Check if exist an overtime active client then remove
+			if time.Since(val.start) >= val.opt.TotalDuration {
 				connIndex := fmt.Sprintf("%d/%d", val.id, 0)
 				val.acc.average(val.start, connIndex, "handleUDP", "rcv/s", &aggReader)
 				log.Printf("Total packet Server received from %s: %d", key, val.acc.calls)
@@ -72,6 +57,14 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 				idCount--
 				continue
 			}
+		}
+
+		var info *udpInfo
+		n, src, errRead := conn.ReadFromUDP(buf) //Read from client
+
+		if src == nil {
+			log.Printf("handleUDP: ERROR read nil src: %v", errRead)
+			continue
 		}
 
 		var found bool
@@ -97,7 +90,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 			info.acc.prevTime = info.start
 			tab[src.String()] = info
 
-			log.Printf("handleUDP: Receive from source: %v", src)
+			log.Printf("handleUDP: Receive from: %v", src)
 			// log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
@@ -118,7 +111,7 @@ func handleUDP(app *config, wg *sync.WaitGroup, conn *net.UDPConn) {
 
 		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
 
-		if time.Since(info.start) > info.opt.TotalDuration {
+		if time.Since(info.start) >= info.opt.TotalDuration {
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
 			log.Printf("Total packet Server received from %s: %d", src, info.acc.calls)
 

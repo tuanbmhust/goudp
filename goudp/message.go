@@ -33,9 +33,9 @@ type options struct {
 }
 
 type aggregate struct {
+	mutex sync.Mutex
 	Mbps  int64 // Megabit/s
 	Cps   int64 // Call/s
-	mutex sync.Mutex
 }
 
 type udpInfo struct {

@@ -2,17 +2,16 @@ package main
 
 import (
 	"log"
-	"sync"
 	"time"
 )
 
 type account struct {
+	// mutex     sync.Mutex
 	prevTime  time.Time
 	prevSize  int64
 	prevCalls int
 	size      int64
 	calls     int
-	mutex     sync.Mutex
 }
 
 const reportFormat = "%s %7s %14s rate: %6d Mbps %6d %s"
@@ -46,10 +45,10 @@ func (a *account) update(n int, reportInterval time.Duration, conn, label, cpsLa
 
 		log.Printf(reportFormat, conn, "report", label, mbps, cps, cpsLabel)
 
-		a.mutex.Lock()
+		// a.mutex.Lock()
 		a.prevTime = now
 		a.prevSize = a.size
 		a.prevCalls = a.calls
-		a.mutex.Unlock()
+		// a.mutex.Unlock()
 	}
 }
