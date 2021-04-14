@@ -8,4 +8,6 @@ go vet ./goudp
 #test
 go test ./goudp
 #build
-go install -v ./goudp
+go install ./goudp #remember to copy the goudp.exe to GO_PATH
+#to see help
+goudp -help

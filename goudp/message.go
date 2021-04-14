@@ -20,8 +20,8 @@ type config struct {
 	isClient          bool
 	isOnlyReadServer  bool
 	isOnlyWriteClient bool
-	numThreadSV       int
-	numThreadCL       int
+	numProcSV         int
+	numProcCL         int
 }
 
 type options struct {

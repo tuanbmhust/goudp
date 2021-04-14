@@ -12,7 +12,7 @@ import (
 
 func openServer(app *config) {
 	//Number of CPU can use
-	runtime.GOMAXPROCS(app.numThreadSV)
+	runtime.GOMAXPROCS(app.numProcSV)
 
 	log.Printf("%v", app)
 
@@ -91,7 +91,6 @@ func handleUDP(app *config, conn *net.UDPConn) {
 			tab[src.String()] = info
 
 			log.Printf("handleUDP: Receive from: %v", src)
-			// log.Printf("handleUDP: options received: %v", info.opt)
 
 			if !app.isOnlyReadServer {
 				opt := info.opt
@@ -109,8 +108,6 @@ func handleUDP(app *config, conn *net.UDPConn) {
 			continue
 		}
 
-		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
-
 		if time.Since(info.start) >= info.opt.TotalDuration {
 			info.acc.average(info.start, connIndex, "handleUDP", "rcv/s", &aggReader)
 			log.Printf("Total packet Server received from %s: %d", src, info.acc.calls)
@@ -121,6 +118,8 @@ func handleUDP(app *config, conn *net.UDPConn) {
 			idCount--
 			continue
 		}
+
+		info.acc.update(n, info.opt.ReportInterval, connIndex, "handleUDP", "rcv/s")
 	}
 }
 

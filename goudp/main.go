@@ -28,8 +28,8 @@ func main() {
 	app.opt.MaxSpeed, err = strconv.ParseFloat(os.Getenv("MAX_SPEED"), 64) //equals 0 means unlimited
 	app.reportInterval = os.Getenv("REPORT_INTERVAL") + "s"                //time between 2 report
 	app.totalDuration = os.Getenv("TOTAL_DURATION") + "s"                  //total report time
-	app.numThreadSV, err = strconv.Atoi(os.Getenv("SV_MAX_PROCS"))         //Number of thread of server
-	app.numThreadCL, err = strconv.Atoi(os.Getenv("CL_MAX_PROCS"))         //Number of thread of client
+	app.numProcSV, err = strconv.Atoi(os.Getenv("SV_MAX_PROCS"))           //Number of thread of server
+	app.numProcCL, err = strconv.Atoi(os.Getenv("CL_MAX_PROCS"))           //Number of thread of client
 	app.localAddr = os.Getenv("SRC_IP") + ":" + os.Getenv("SRC_PORT")      //
 
 	if err != nil {

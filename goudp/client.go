@@ -14,7 +14,7 @@ import (
 
 func openClient(app *config, proto string) {
 	//Number of CPU can use
-	runtime.GOMAXPROCS(app.numThreadCL)
+	runtime.GOMAXPROCS(app.numProcCL)
 
 	var wg sync.WaitGroup
 	var aggReader aggregate
